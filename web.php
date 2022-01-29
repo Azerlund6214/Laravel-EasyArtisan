@@ -16,18 +16,23 @@
     Route::get('/artisan', function ()
 	{
 		
-		
-		
-		
-		
-		
-		echo ' <br>
+		echo '
+			<title>Easy Artisan</title>
+			<link rel="icon" type="image/png" sizes="32x32" href="https://laravel.com/img/favicon/favicon-32x32.png">
+			<link rel="icon" type="image/png" sizes="16x16" href="https://laravel.com/img/favicon/favicon-16x16.png">
+			<link rel="shortcut icon" href="https://laravel.com/img/favicon/favicon.ico">
+			
+			<style>.box form { display:inline-block; }</style>
+			<style>button { font-size: 16px; padding: 12px; border-radius: 12px; border: 2px solid #4CAF50; /* Green */ }</style>
+			';
+			
+		echo '
+			<br>
 			<hr>
 			<h1>~ EasyArtisan ~</h1>
 			<hr>
             <h2>Общая часть</h2>
-			<style>.box form { display:inline-block; }</style>
-			<style>button { font-size: 16px; padding: 12px; border-radius: 12px; border: 2px solid #4CAF50; /* Green */ }</style>
+			
             <div class="box">
 				<form method="get" action="/artisan-migrate-fresh" target="_blank">  <button type="submit">migrate:fresh --seed</button></form>
 				<form method="get" action="/artisan-migrate" target="_blank">  <button type="submit">migrate</button></form>
@@ -43,9 +48,21 @@
 				<form method="get" action="/artisan-route-list-2" target="_blank">   <button type="submit">route:list --compact</button></form>
 			</div>
 			<hr>
+		';
+		
+		echo ' <br>
 			
 			<hr>
+			<h1>~ EasyArtisan ~</h1>
+			<hr>
+            <h2>Общая часть</h2>
+			
+            
+			<hr>
 		';
+		
+		
+		
 		
 		function getModels(): Array
 		{
@@ -95,10 +112,11 @@
     Route::get('/artisan-migrate',        function () { Artisan::call('migrate');                           echo "Исполнено => migrate"; dd(Artisan::output());  } );
     Route::get('/artisan-migrate-fresh',  function () { Artisan::call('migrate:fresh', ['--seed' => true]); echo "Исполнено => migrate:fresh --seed"; dd(Artisan::output());  } );
     Route::get('/artisan-optimize-clear', function () { Artisan::call('optimize:clear');                    echo "Исполнено => optimize:clear";       dd(Artisan::output());  } );
+    Route::get('/artisan-keygen',         function () { Artisan::call('key:generate');                      echo "Исполнено => key:generate";         dd(Artisan::output());  } );
     Route::get('/artisan-route-list',     function () { Artisan::call('route:list');                        echo "Исполнено => route:list";           dd(Artisan::output());  } );
     Route::get('/artisan-route-list-2',   function () { Artisan::call('route:list', ['--compact' => true]); echo "Исполнено => route:list --compact"; dd(Artisan::output());  } );
-    Route::get('/artisan-keygen',         function () { Artisan::call('key:generate');                      echo "Исполнено => key:generate";         dd(Artisan::output());  } );
     
+	
 	# */
 
     #######
