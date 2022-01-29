@@ -11,7 +11,11 @@
     use Illuminate\Support\Facades\Schema;
 
 
-        # /*
+    # /*
+
+    use Illuminate\Container\Container;
+    use Illuminate\Database\Eloquent\Model;
+    use Illuminate\Support\Facades\File;
 
     function getModelsInfo(): Array
     {
@@ -57,6 +61,17 @@
 
     Route::get('/artisan', function ()
 	{
+        $bg = [ # Рандомные фоны страницы, надоело белое полотно.
+            'background: -webkit-linear-gradient(45deg,#fff25c,#f39ed9,#868adc); background: linear-gradient(45deg,#fff25c,#f39ed9,#868adc);',
+            'background: -webkit-linear-gradient(90deg,#bc69dc,#5d2df4); background: linear-gradient(90deg,#bc69dc,#5d2df4);',
+            'background: -webkit-linear-gradient(90deg,#bc69dc,#5d2df4); background: linear-gradient(90deg,#bc69dc,#5d2df4);',
+            'background: -webkit-linear-gradient(90deg,#fa7ed1,#8886fc); background: linear-gradient(90deg,#fa7ed1,#8886fc);',
+            'background-blend-mode: screen; background: linear-gradient(limegreen, transparent), linear-gradient(90deg, skyblue, transparent), linear-gradient(-90deg, coral, transparent);',
+            'background-color: #f3a183; background-image: linear-gradient(transparent 0px, transparent 49px, rgba(255,255,255, 0.2) 50px, transparent 51px, transparent 99px, rgba(255,255,255, 0.2) 100px),
+                linear-gradient(120deg, transparent 0, transparent 48px, rgba(255,255,255, 0.2) 49px, transparent 50px, transparent 98px, rgba(255,255,255, 0.2) 99px, transparent 100px),
+                linear-gradient(60deg, transparent 0, transparent 48px, rgba(255,255,255, 0.2) 49px, transparent 50px, transparent 98px, rgba(255,255,255, 0.2) 99px, transparent 100px),
+                linear-gradient(90deg, #f3a183, #eC6f66); background-size: 100px 100px, 115px 100px, 115px 100px, auto;'
+        ];
 
 		echo '
 			<title>Easy Artisan</title>
@@ -64,28 +79,28 @@
 			<link rel="icon" type="image/png" sizes="16x16" href="https://laravel.com/img/favicon/favicon-16x16.png">
 			<link rel="shortcut icon" href="https://laravel.com/img/favicon/favicon.ico">
 
+			<style> html { '.$bg[ random_int(0,count($bg)-1) ].' }</style>
 			<style>.box form { display:inline-block; }</style>
-			<style>button { font-size: 16px; padding: 12px; border-radius: 12px; border: 2px solid #4CAF50; /* Green */ }</style>
+			<style> button { font-size: 16px; padding: 12px; border-radius: 12px; border: 2px solid #4D3E96; }</style>
 			';
 
 		echo '
-			<br>
 			<hr><h1>~ EasyArtisan ~</h1><hr>
             <h2>Общая часть</h2>
 
             <div class="box">
-				<form method="get" action="/artisan-migrate-fresh" target="_blank">  <button type="submit">migrate:fresh --seed</button></form>
-				<form method="get" action="/artisan-migrate" target="_blank">  <button type="submit">migrate</button></form>
+				<form method="get" action="/artisan-migrate-fresh"  target="_blank">  <button type="submit">migrate:fresh --seed</button></form>
+				<form method="get" action="/artisan-migrate"        target="_blank">  <button type="submit">migrate</button></form>
 				<form method="get" action="/artisan-migrate-status" target="_blank">  <button type="submit">migrate:status</button></form>
 			</div>
 
             <div class="box">
 				<form method="get" action="/artisan-optimize-clear" target="_blank"> <button type="submit">optimize:clear</button></form>
-				<form method="get" action="/artisan-keygen" target="_blank">         <button type="submit">key:generate</button></form>
+				<form method="get" action="/artisan-keygen"         target="_blank"> <button type="submit">key:generate</button></form>
 			</div>
 
             <div class="box">
-				<form method="get" action="/artisan-route-list" target="_blank">     <button type="submit">route:list</button></form>
+				<form method="get" action="/artisan-route-list"   target="_blank">   <button type="submit">route:list</button></form>
 				<form method="get" action="/artisan-route-list-2" target="_blank">   <button type="submit">route:list --compact</button></form>
 			</div>
 		';
@@ -96,15 +111,25 @@
         } catch (\Exception $e) { dump('Нет подключения к СУБД или БД',$e, DB::connection()->getConfig()); return; }
 
 		$dbConfig = DB::connection()->getConfig();
-		dump("Конфиг БД: ".$dbConfig['host'].':'.$dbConfig['port'].' -> '.
-                $dbConfig['database'].'@'.$dbConfig['username'].' -> '.'Префикс: '.$dbConfig['prefix'] );
+		dump("Конфиг БД:  ".$dbConfig['host'].':'.$dbConfig['port'].'  ->  '.
+                $dbConfig['database'].'@'.$dbConfig['username'].'  ->  '.'Префикс: '.$dbConfig['prefix'] );
 
-
-		//dd($dbConfig);
-		//dd(123);
-
-
-		$modelsInfo = getModelsInfo();
+        echo '<h3>Чистка таблиц</h3>';
+        echo '<div class="box">';
+        echo '
+                <form method="GET" action="/artisan-tbl-clear" target="_blank">
+                    <input type="text"   name="target" placeholder="Имя без префикса" value="">
+                    <button type="submit">Очистить</button>
+                </form> | <===> | ';
+        foreach(getModelsInfo() as $key=>$val)
+        {
+            echo '
+                <form method="GET" action="/artisan-tbl-clear" target="_blank">
+                    <input type="hidden"   name="target"  value="'.$val['DB_TABLE'].'">
+                    <button type="submit">'.$val['DB_TABLE'].' ('.$val['DB_COUNT'].')'.'</button>
+                </form> ||| ';
+        }
+        echo '</div>';
 
         echo '<hr><h3>Слив всей БД в JSON</h3>
             <div class="box">
@@ -114,11 +139,17 @@
                 </form>
              </div>';
 
+        echo '<hr><h3>Быстрый скан доступности сервера</h3>
+            <h4>3389-RDP | 80-HTTP | 443-HTTPS | 21-FTP | 3306-MySQL</h4>
+            <div class="box">
+                <form method="GET" action="/artisan-alifer" target="_blank">
+                    <input type="text"   name="host" placeholder="ip или домен"  value="">
+                    <input type="text"   name="port" placeholder="Один порт"  value="3389">
+                    <button type="submit">Проверить</button>
+                </form>
+             </div>';
 
-
-
-		dd($modelsInfo);
-
+        dd('End');
 		}  );
 
     Route::get('/artisan-migrate',        function () { Artisan::call('migrate');                           echo "Исполнено => migrate";              dd(Artisan::output());  } );
@@ -163,7 +194,55 @@
             echo $contents;
         }, $filename);
     } );
+    Route::get('/artisan-tbl-clear',function()
+    {
+        try{
+            $table  = @$_GET['target']; # БЕЗ префикса таблицы
+            dump($table);
 
+            DB::table($table)->delete(); # Только удалит записи.
+            #Schema::drop($table->Tables_in_DbName);
+
+        }catch(\Exception $e){ dd('Вылет', $e->getMessage(), $e); }
+
+        dd('Успех', 'Таблица ' . $table . ' Просто очищена');
+    });
+    Route::get('/artisan-alifer',function()
+    {
+        $host  = $_GET['host'];
+        $port  = $_GET['port'];
+
+        function tryConnect($host,$port)
+        {
+            $waitTimeoutInSeconds = 1;
+
+            try
+            {
+                if($fp = @fsockopen($host,$port,$errCode,$errStr,$waitTimeoutInSeconds))
+                {
+                    if($fp) // Только если смогли открыть
+                        fclose($fp);
+                    return true;
+                }
+                else
+                {
+                    $errStr=iconv("windows-1251","utf-8",$errStr); # Иначе месиво
+                    dump('Код ошибки: '.$errCode,$errStr);
+                    return false;
+                }
+            }catch(Exception $e){
+                return false;
+            }
+
+        }
+
+        dump($host.':'.$port);
+
+        if( tryConnect($host,$port) )
+            dd('Success');
+        else
+            dd('Fail');
+    });
 
     # */
 
