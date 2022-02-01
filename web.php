@@ -51,7 +51,12 @@
 
             $inst = new $path;
             $modelsInfo[$modelName]['DB_TABLE'] = $inst->getTable();
-            $modelsInfo[$modelName]['DB_COUNT'] = $inst->count();
+            
+            try{
+                $modelsInfo[$modelName]['DB_COUNT'] = $inst->count();
+            }catch(\Exception $e){
+                $modelsInfo[$modelName]['DB_COUNT'] = '=ОШИБКА='; // Если таблицы не существует.
+            }
             $modelsInfo[$modelName]['DB_PK']     = $inst->getKeyName();
             $modelsInfo[$modelName]['DB_PK_TYPE'] = $inst->getKeyType();
         }
@@ -97,6 +102,7 @@
             <div class="box">
 				<form method="get" action="/artisan-optimize-clear" target="_blank"> <button type="submit">optimize:clear</button></form>
 				<form method="get" action="/artisan-keygen"         target="_blank"> <button type="submit">key:generate</button></form>
+				<form method="get" action="/artisan-del-sess-files" target="_blank"> <button type="submit">Удалить файлы сессий</button></form>
 			</div>
 
             <div class="box">
@@ -243,7 +249,31 @@
         else
             dd('Fail');
     });
+	Route::get('/artisan-del-sess-files',function()
+    {
+        try{
+            $allSessFiles = File::allFiles(storage_path('framework\sessions'));
+            dump('Всего файлов найдено: '.count($allSessFiles));
+			
+            if(count($allSessFiles) === 0) dd('Не нашли файлов');
+			
+            foreach($allSessFiles as $oneFile)
+            {
+                if( $oneFile->isFile() )
+                    if($oneFile->getExtension() === '')
+                    {
+                        $fullPath = $oneFile->getRealPath();
+                        File::delete($fullPath);
+                        dump('Удален файл сессии: '.$fullPath);
+                    }
+            }
 
+        }catch(\Exception $e){ dd('Вылет', $e->getMessage(), $e); }
+
+        dd($allSessFiles,'End');
+    });
+	
+	
     # */
 
     #######
