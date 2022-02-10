@@ -10,12 +10,11 @@
     use Illuminate\Support\Facades\Route;
     use Illuminate\Support\Facades\Schema;
 
-
-    # /*
-
     use Illuminate\Container\Container;
     use Illuminate\Database\Eloquent\Model;
     use Illuminate\Support\Facades\File;
+
+    # /*
 
     function getModelsInfo(): Array
     {
@@ -51,7 +50,7 @@
 
             $inst = new $path;
             $modelsInfo[$modelName]['DB_TABLE'] = $inst->getTable();
-            
+
             try{
                 $modelsInfo[$modelName]['DB_COUNT'] = $inst->count();
             }catch(\Exception $e){
@@ -65,7 +64,9 @@
     }
 
     Route::get('/artisan', function ()
-	{
+    {
+        $version = '11-02-22';
+
         $bg = [ # Рандомные фоны страницы, надоело белое полотно.
             'background: -webkit-linear-gradient(45deg,#fff25c,#f39ed9,#868adc); background: linear-gradient(45deg,#fff25c,#f39ed9,#868adc);',
             'background: -webkit-linear-gradient(90deg,#bc69dc,#5d2df4); background: linear-gradient(90deg,#bc69dc,#5d2df4);',
@@ -78,7 +79,7 @@
                 linear-gradient(90deg, #f3a183, #eC6f66); background-size: 100px 100px, 115px 100px, 115px 100px, auto;'
         ];
 
-		echo '
+        echo '
 			<title>Easy Artisan</title>
 			<link rel="icon" type="image/png" sizes="32x32" href="https://laravel.com/img/favicon/favicon-32x32.png">
 			<link rel="icon" type="image/png" sizes="16x16" href="https://laravel.com/img/favicon/favicon-16x16.png">
@@ -89,7 +90,7 @@
 			<style> button { font-size: 16px; padding: 12px; border-radius: 12px; border: 2px solid #4D3E96; }</style>
 			';
 
-		echo '
+        echo '
 			<hr><h1>~ EasyArtisan ~</h1><hr>
             <h2>Общая часть</h2>
 
@@ -111,14 +112,14 @@
 			</div>
 		';
 
-		echo '<hr><h2>Работа с БД</h2>';
+        echo '<hr><h2>Работа с БД</h2>';
 
-		try { DB::connection()->getPdo(); DB::connection()->getDatabaseName();
+        try { DB::connection()->getPdo(); DB::connection()->getDatabaseName();
         } catch (\Exception $e) { dump('Нет подключения к СУБД или БД',$e, DB::connection()->getConfig()); return; }
 
-		$dbConfig = DB::connection()->getConfig();
-		dump("Конфиг БД:  ".$dbConfig['host'].':'.$dbConfig['port'].'  ->  '.
-                $dbConfig['database'].'@'.$dbConfig['username'].'  ->  '.'Префикс: '.$dbConfig['prefix'] );
+        $dbConfig = DB::connection()->getConfig();
+        dump("Конфиг БД:  ".$dbConfig['host'].':'.$dbConfig['port'].'  ->  '.
+            $dbConfig['database'].'@'.$dbConfig['username'].'  ->  '.'Префикс: '.$dbConfig['prefix'] );
 
         echo '<h3>Чистка таблиц</h3>';
         echo '<div class="box">';
@@ -155,8 +156,38 @@
                 </form>
              </div>';
 
-        dd('End');
-		}  );
+        echo '<hr>';
+
+        $allLogFiles = File::allFiles(storage_path('logs'));
+        echo '<h3>Файлы логов ошибок и вылетов</h3>';
+
+        echo '<div class="box"> Скачать: ==> ';
+        foreach($allLogFiles as $oneFile)
+        {
+            if( $oneFile->isFile() )
+            {
+                $name = $oneFile->getFilename();
+                echo '<form method="GET" action="/artisan-download-one-log-file/'.$name.'" target="_blank">
+                            <button type="submit">'.$name.'</button>
+                        </form> <===> ';
+            }
+        }
+        echo '</div>';
+        echo '<div class="box"> Удалить: ==> ';
+        foreach($allLogFiles as $oneFile)
+        {
+            if( $oneFile->isFile() )
+            {
+                $name = $oneFile->getFilename();
+                echo '<form method="GET" action="/artisan-delete-one-log-file/'.$name.'" target="_blank">
+                            <button type="submit">'.$name.'</button>
+                        </form> <===> ';
+            }
+        }
+        echo '</div>';
+
+        dd('End, версия от '.$version);
+    }  );
 
     Route::get('/artisan-migrate',        function () { Artisan::call('migrate');                           echo "Исполнено => migrate";              dd(Artisan::output());  } );
     Route::get('/artisan-migrate-fresh',  function () { Artisan::call('migrate:fresh', ['--seed' => true]); echo "Исполнено => migrate:fresh --seed"; dd(Artisan::output());  } );
@@ -249,14 +280,14 @@
         else
             dd('Fail');
     });
-	Route::get('/artisan-del-sess-files',function()
+    Route::get('/artisan-del-sess-files',function()
     {
         try{
             $allSessFiles = File::allFiles(storage_path('framework\sessions'));
             dump('Всего файлов найдено: '.count($allSessFiles));
-			
+
             if(count($allSessFiles) === 0) dd('Не нашли файлов');
-			
+
             foreach($allSessFiles as $oneFile)
             {
                 if( $oneFile->isFile() )
@@ -272,8 +303,47 @@
 
         dd($allSessFiles,'End');
     });
-	
-	
+
+    Route::get('/artisan-download-one-log-file/{filename}',function($filename)
+    {
+        try{
+            $allLogFiles = File::allFiles(storage_path('logs'));
+            if(count($allLogFiles) === 0) dd('Не нашли файлов');
+
+            foreach($allLogFiles as $oneFile)
+            {
+                if( $oneFile->isFile() )
+                    if($oneFile->getFilename() === $filename)
+                        return response()->download($oneFile,$filename);
+            }
+
+        }catch(\Exception $e){ dd('Вылет', $e->getMessage(), $e); }
+
+        dd($allLogFiles,'End');
+    });
+    Route::get('/artisan-delete-one-log-file/{filename}',function($filename)
+    {
+        try{
+            $allLogFiles = File::allFiles(storage_path('logs'));
+            if(count($allLogFiles) === 0) dd('Не нашли файлов');
+
+            foreach($allLogFiles as $oneFile)
+            {
+                if( $oneFile->isFile() )
+                    if($oneFile->getFilename() === $filename)
+                    {
+                        $path = $oneFile->getRealPath();
+                        File::delete($path);
+                        dump('Удален файл: '.$path );
+                        break;
+                    }
+            }
+
+        }catch(\Exception $e){ dd('Вылет', $e->getMessage(), $e); }
+
+        dd($allLogFiles,'End');
+    });
+
     # */
 
     #######
