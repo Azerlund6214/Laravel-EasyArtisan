@@ -14,6 +14,7 @@
     use Illuminate\Database\Eloquent\Model;
     use Illuminate\Support\Facades\File;
 
+	# ####
     # /*
 
     function getModelsInfo(): Array
@@ -65,8 +66,11 @@
 
     Route::get('/artisan', function ()
     {
-        $version = '11-02-22';
+        $version = '2022-05-06';
 
+		try{ $allSessFilesCount = count( File::allFiles(storage_path('framework\sessions')) );
+			}catch(\Exception $e){ $allSessFilesCount = 'Вылет'.$e->getMessage(); }
+		
         $bg = [ # Рандомные фоны страницы, надоело белое полотно.
             'background: -webkit-linear-gradient(45deg,#fff25c,#f39ed9,#868adc); background: linear-gradient(45deg,#fff25c,#f39ed9,#868adc);',
             'background: -webkit-linear-gradient(90deg,#bc69dc,#5d2df4); background: linear-gradient(90deg,#bc69dc,#5d2df4);',
@@ -89,9 +93,9 @@
 			<style>.box form { display:inline-block; }</style>
 			<style> button { font-size: 16px; padding: 12px; border-radius: 12px; border: 2px solid #4D3E96; }</style>
 			';
-
+			
         echo '
-			<hr><h1>~ EasyArtisan ~</h1><hr>
+			<hr><h1>~ EasyArtisan ~ v'.$version.' ~</h1><hr>
             <h2>Общая часть</h2>
 
             <div class="box">
@@ -103,7 +107,7 @@
             <div class="box">
 				<form method="get" action="/artisan-optimize-clear" target="_blank"> <button type="submit">optimize:clear</button></form>
 				<form method="get" action="/artisan-keygen"         target="_blank"> <button type="submit">key:generate</button></form>
-				<form method="get" action="/artisan-del-sess-files" target="_blank"> <button type="submit">Удалить файлы сессий</button></form>
+				<form method="get" action="/artisan-del-sess-files" target="_blank"> <button type="submit">Удалить файлы сессий ('.$allSessFilesCount.'шт)</button></form>
 			</div>
 
             <div class="box">
@@ -186,7 +190,6 @@
         }
         echo '</div>';
 
-        dd('End, версия от '.$version);
     }  );
 
     Route::get('/artisan-migrate',        function () { Artisan::call('migrate');                           echo "Исполнено => migrate";              dd(Artisan::output());  } );
@@ -345,6 +348,7 @@
     });
 
     # */
+	# ####
 
     #######
     # End
