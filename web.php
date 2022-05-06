@@ -170,9 +170,11 @@
         {
             if( $oneFile->isFile() )
             {
-                $name = $oneFile->getFilename();
+                $size = floor($oneFile->getSize() / 1024);
+				$name = $oneFile->getFilename();
+				$nameFull = $name . ' (~' . $size . 'Кб)';
                 echo '<form method="GET" action="/artisan-download-one-log-file/'.$name.'" target="_blank">
-                            <button type="submit">'.$name.'</button>
+                            <button type="submit">'.$nameFull.'</button>
                         </form> <===> ';
             }
         }
@@ -182,9 +184,11 @@
         {
             if( $oneFile->isFile() )
             {
-                $name = $oneFile->getFilename();
+				$size = floor($oneFile->getSize() / 1024);
+				$name = $oneFile->getFilename();
+				$nameFull = $name . ' (~' . $size . 'Кб)';
                 echo '<form method="GET" action="/artisan-delete-one-log-file/'.$name.'" target="_blank">
-                            <button type="submit">'.$name.'</button>
+                            <button type="submit">'.$nameFull.'</button>
                         </form> <===> ';
             }
         }
