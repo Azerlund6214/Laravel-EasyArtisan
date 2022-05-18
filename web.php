@@ -193,7 +193,18 @@
             }
         }
         echo '</div>';
-
+    
+        echo '<hr><h3>Быстрый Telegram</h3>
+            <div class="box">
+                <form method="GET" action="/artisan-telegram" target="_blank">
+                    <input type="text"   name="token" placeholder="Токен"  value="">
+                    <input type="text"   name="chat" placeholder="Чат"  value="">
+                    <input type="text"   name="msg" placeholder="Сообщение"  value="">
+                    <button type="submit">Отправить</button>
+                </form>
+             </div>';
+        
+        
     }  );
 
     Route::get('/artisan-migrate',        function () { Artisan::call('migrate');                           echo "Исполнено => migrate";              dd(Artisan::output());  } );
@@ -310,7 +321,36 @@
 
         dd($allSessFiles,'End');
     });
-
+    Route::get('/artisan-telegram',function()
+    {
+        try{
+            $token = $_GET['token'];
+            $chatId = $_GET['chat'];
+            $message = $_GET['msg'];
+            
+            $url = "https://api.telegram.org/bot" . $token . "/sendMessage?chat_id=" . $chatId;
+            $url = $url . "&text=" . urlencode($message);
+            $url = $url . "&parse_mode=html"; # Что бы работало форматирование через html-теги
+    
+            $ch = curl_init();
+    
+            $optArray = array(
+                CURLOPT_URL => $url,
+                CURLOPT_RETURNTRANSFER => true,
+            );
+            curl_setopt_array($ch, $optArray);
+    
+            $result = curl_exec($ch);
+            curl_close($ch);
+            
+            dump($url);
+            dump(json_decode($result, true));
+            
+        }catch(\Exception $e){ dd('Вылет', $e->getMessage(), $e); }
+        
+        dd('End');
+    });
+    
     Route::get('/artisan-download-one-log-file/{filename}',function($filename)
     {
         try{
