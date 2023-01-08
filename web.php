@@ -14,9 +14,9 @@
     use Illuminate\Database\Eloquent\Model;
     use Illuminate\Support\Facades\File;
 
-	# ####
+	# - ### ### ### ###
+    #   **/ ARTISAN \**
     # /*
-
     function getModelsInfo(): Array
     {
         $models = collect(File::allFiles(app_path()))
@@ -64,13 +64,23 @@
         return $modelsInfo;
     }
 
+    function echoFinalInfoAndDD($cmd)
+    {
+        echo "<style>  html { background: -webkit-linear-gradient(90deg,#bc69dc,#5d2df4); background: linear-gradient(90deg,#bc69dc,#5d2df4); } </style>";
+        dump("Исполнено   =>   ".$cmd);
+        dump("DB_Env <=> DB_Real   ------>   ".env("DB_DATABASE").' <=> '.DB::connection()->getDatabaseName()); echo "<br><br><br><br>";
+        dump(Artisan::output()); echo "<br><br><br><br>";
+
+        dd('End');
+    }
+
     Route::get('/artisan', function ()
     {
-        $version = '2022-05-06';
+        $version = '2023-01-08';
 
-		try{ $allSessFilesCount = count( File::allFiles(storage_path('framework\sessions')) );
-			}catch(\Exception $e){ $allSessFilesCount = 'Вылет'.$e->getMessage(); }
-		
+        try{ $allSessFilesCount = count( File::allFiles(storage_path('framework\sessions')) );
+        }catch(\Exception $e){ $allSessFilesCount = 'Вылет'.$e->getMessage(); }
+
         $bg = [ # Рандомные фоны страницы, надоело белое полотно.
             'background: -webkit-linear-gradient(45deg,#fff25c,#f39ed9,#868adc); background: linear-gradient(45deg,#fff25c,#f39ed9,#868adc);',
             'background: -webkit-linear-gradient(90deg,#bc69dc,#5d2df4); background: linear-gradient(90deg,#bc69dc,#5d2df4);',
@@ -93,7 +103,7 @@
 			<style>.box form { display:inline-block; }</style>
 			<style> button { font-size: 16px; padding: 12px; border-radius: 12px; border: 2px solid #4D3E96; }</style>
 			';
-			
+
         echo '
 			<hr><h1>~ EasyArtisan ~ v'.$version.' ~</h1><hr>
             <h2>Общая часть</h2>
@@ -171,8 +181,8 @@
             if( $oneFile->isFile() )
             {
                 $size = floor($oneFile->getSize() / 1024);
-				$name = $oneFile->getFilename();
-				$nameFull = $name . ' (~' . $size . 'Кб)';
+                $name = $oneFile->getFilename();
+                $nameFull = $name . ' (~' . $size . 'Кб)';
                 echo '<form method="GET" action="/artisan-download-one-log-file/'.$name.'" target="_blank">
                             <button type="submit">'.$nameFull.'</button>
                         </form> <===> ';
@@ -184,16 +194,16 @@
         {
             if( $oneFile->isFile() )
             {
-				$size = floor($oneFile->getSize() / 1024);
-				$name = $oneFile->getFilename();
-				$nameFull = $name . ' (~' . $size . 'Кб)';
+                $size = floor($oneFile->getSize() / 1024);
+                $name = $oneFile->getFilename();
+                $nameFull = $name . ' (~' . $size . 'Кб)';
                 echo '<form method="GET" action="/artisan-delete-one-log-file/'.$name.'" target="_blank">
                             <button type="submit">'.$nameFull.'</button>
                         </form> <===> ';
             }
         }
         echo '</div>';
-    
+
         echo '<hr><h3>Быстрый Telegram</h3>
             <div class="box">
                 <form method="GET" action="/artisan-telegram" target="_blank">
@@ -203,17 +213,17 @@
                     <button type="submit">Отправить</button>
                 </form>
              </div>';
-        
-        
+
+
     }  );
 
-    Route::get('/artisan-migrate',        function () { Artisan::call('migrate');                           echo "Исполнено => migrate";              dd(Artisan::output());  } );
-    Route::get('/artisan-migrate-fresh',  function () { Artisan::call('migrate:fresh', ['--seed' => true]); echo "Исполнено => migrate:fresh --seed"; dd(Artisan::output());  } );
-    Route::get('/artisan-migrate-status', function () { Artisan::call('migrate:status');                    echo "Исполнено => migrate:status";       dd(Artisan::output());  } );
-    Route::get('/artisan-optimize-clear', function () { Artisan::call('optimize:clear');                    echo "Исполнено => optimize:clear";       dd(Artisan::output());  } );
-    Route::get('/artisan-keygen',         function () { Artisan::call('key:generate');                      echo "Исполнено => key:generate";         dd(Artisan::output());  } );
-    Route::get('/artisan-route-list',     function () { Artisan::call('route:list');                        echo "Исполнено => route:list";           dd(Artisan::output());  } );
-    Route::get('/artisan-route-list-2',   function () { Artisan::call('route:list', ['--compact' => true]); echo "Исполнено => route:list --compact"; dd(Artisan::output());  } );
+    Route::get('/artisan-migrate',        function () { Artisan::call('migrate');          echoFinalInfoAndDD('migrate');  } );
+    Route::get('/artisan-migrate-fresh',  function () { Artisan::call('migrate:fresh', ['--seed' => true]);  echoFinalInfoAndDD('migrate:fresh --seed');    } );
+    Route::get('/artisan-migrate-status', function () { Artisan::call('migrate:status');   echoFinalInfoAndDD('migrate:status');  } );
+    Route::get('/artisan-optimize-clear', function () { Artisan::call('optimize:clear');   echoFinalInfoAndDD('optimize:clear');  } );
+    Route::get('/artisan-keygen',         function () { Artisan::call('key:generate');     echoFinalInfoAndDD('key:generate');    } );
+    Route::get('/artisan-route-list',     function () { Artisan::call('route:list');       echoFinalInfoAndDD('route:list');      } );
+    Route::get('/artisan-route-list-2',   function () { Artisan::call('route:list', ['--compact' => true]);   echoFinalInfoAndDD('route:list --compact');   } );
 
     Route::get('/artisan-sliv',function()
     {
@@ -327,30 +337,30 @@
             $token = $_GET['token'];
             $chatId = $_GET['chat'];
             $message = $_GET['msg'];
-            
+
             $url = "https://api.telegram.org/bot" . $token . "/sendMessage?chat_id=" . $chatId;
             $url = $url . "&text=" . urlencode($message);
             $url = $url . "&parse_mode=html"; # Что бы работало форматирование через html-теги
-    
+
             $ch = curl_init();
-    
+
             $optArray = array(
                 CURLOPT_URL => $url,
                 CURLOPT_RETURNTRANSFER => true,
             );
             curl_setopt_array($ch, $optArray);
-    
+
             $result = curl_exec($ch);
             curl_close($ch);
-            
+
             dump($url);
             dump(json_decode($result, true));
-            
+
         }catch(\Exception $e){ dd('Вылет', $e->getMessage(), $e); }
-        
+
         dd('End');
     });
-    
+
     Route::get('/artisan-download-one-log-file/{filename}',function($filename)
     {
         try{
