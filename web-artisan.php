@@ -1,12 +1,12 @@
 <?php
     # - ### ### ### ###
 
-    use Illuminate\Support\Facades\DB;
-    use Illuminate\Support\Facades\Route;
     use Illuminate\Support\Facades\Artisan;
+    use Illuminate\Support\Facades\Route;
+    use Illuminate\Support\Facades\File;
+    use Illuminate\Support\Facades\DB;
 
     use Illuminate\Database\Eloquent\Model;
-    use Illuminate\Support\Facades\File;
 
     # - ### ### ### ###
     #   **/ ARTISAN \**
@@ -31,11 +31,12 @@
     function AT_UI_getArrMyUrls()
     {
         return [
-                'DEV' => ['/test','/w','/o','/500','/404'],
+                'DEV' => ['/test','/error','/favicon.ico','/w','/o','/500','/404'],
                 'DEV2' => [
                 	['http://127.0.0.1/openserver/phpmyadmin/index.php','PMA OS 127'],
                 	['http://'.$_SERVER['SERVER_ADDR'].'/openserver/phpmyadmin/index.php','PMA OS RealIP'],
-                    'http://'.$_SERVER['SERVER_ADDR'].':1516','/al','/service','/micro-func'],
+                    'http://'.$_SERVER['SERVER_ADDR'].':1516','/al','/lr','/lu','/service','/micro-func'],
+                '###' => [ '' ],
                 'IP-MY' => [['https://ipinfo.io/','ipinfo.io'],['https://2ip.ru/','2ip.ru'],['https://whoer.net/ru','whoer.net'],
                     ['https://ipinfo.io/what-is-my-ip','ipinfo.io']
                 ],
@@ -99,8 +100,22 @@
                 # https://dnschecker.org/online-traceroute.php
         ];
     }
-
-    function AT_getModelsInfo(): Array
+	function AT_UI_echoHR($colorNum='1',$height=30 , $margin=5)
+	{
+		$COLOR = [
+			'1' => 'background: linear-gradient(-120deg,#44B1CE,#50CDA5,#80A4EE,#E599F2);', # TIA_D
+			'2' => 'background: linear-gradient(-120deg,#EC4141,#EF7135,#FAF5AB,#5FBB4E,#1B98D1,#632E86);', # RD
+		];
+		
+		$st = implode(' ',[
+			'display: block; border-radius: 30px;',
+			"height: {$height}px; margin: {$margin}px 0;",
+			$COLOR[$colorNum],
+		]);
+		echo '<div about="HR-My"><em style="'.$st.'" ></em></div>';
+	}
+    
+    function AT_DEV_getModelsInfo():array
     {
         # После миграции на PHP 8.x все сломалось и пришлось переписывать все с 0 руками.
         #  Костыльно, зато работает.
@@ -147,7 +162,7 @@
 
         return $modelsInfo;
     }
-    function AT_echoFinalInfoAndDD($cmd)
+    function AT_DEV_echoFinalInfoAndDD( $cmd)
     {
         echo "<style>  html { background: -webkit-linear-gradient(90deg,#bc69dc,#5d2df4); background: linear-gradient(90deg,#bc69dc,#5d2df4); } </style>";
         dump("Исполнено   =>   ".$cmd);
@@ -156,115 +171,293 @@
 
         dd('End');
     }
-    function AT_composerDumpAutoload()
-    {
-        echo '<style> html,body {
-        background: -webkit-linear-gradient(90deg,#bc69dc,#5d2df4);
-        background:         linear-gradient(90deg,#bc69dc,#5d2df4);
-        }</style>';
+    
 
-        set_time_limit(180);
-        dump('Тайм лимит = 180сек');
-
-        ignore_user_abort(false);
-        dump('Юзер аборт отменен');
-
-        # - ###
-
-        $pathPhp = (new \Symfony\Component\Process\PhpExecutableFinder)->find(false); # ...modules\php\PHP_8.1\php.exe
-        $pathPhar = realpath('../composer.phar');  # ...\composer.phar
-        $pathWorkRoot = realpath('../'); # Корень проекта
-
-        echo '<hr color="red">';
-        dump($pathPhp,$pathPhar,$pathWorkRoot);
-        echo '<hr color="red">';
-
-        # - ###
-
-        $command = array_merge([$pathPhp,$pathPhar], [ 'dump-autoload' , '--optimize' ] ); #
-        # '--working-dir='.$pathWorkRoot
-
-
-        dump('* Запускаю процесс *');
-        dump('Команда ===> '.implode(' ',$command));
-        dump('Рабочая папка ===> '.$pathWorkRoot);
-        dump('Окружение ===> COMPOSER_HOME='.$pathWorkRoot);
-
-        $proc = (new \Symfony\Component\Process\Process($command,$pathWorkRoot,['COMPOSER_HOME'=>$pathWorkRoot]))->setTimeout(null);
-        $proc->enableOutput();
-        $proc->run();
-        #$proc->start();
-
-        $proc->stop(); # В целом юзлес, но пусть будет
-
-        echo '<hr color="red"><hr color="red"><hr color="red">';
-        dump('Процесс - Отработал');
-
-        dump('Ком Строка: '.$proc->getCommandLine());
-        dump('Код выхода: '.$proc->getExitCodeText());
-
-        dump($proc->getOutput());
-
-
-
-        dd('Все');
-    }
-
-    # Единое место для всех настроек, паролей и тд.
-    function AT_GetArrSettings()
-    {
-    	return [
-    		'AT_VERSION' => '2023-08-08',
-    		
-		    'AT__PASS_NEED' => true,
-		    'AT__PASS_TEXT' => '1243',
-    		'' => '',
-    		'DB_SLIV_PASS' => '123',
-	    ];
-    }
-
-    Route::get('/artisan', function ()
-    {
-        # - ### ### ###
-    	$arrSettings = AT_GetArrSettings();
-        $AT_ModelsInfo = AT_getModelsInfo();
-    	#dd($AT_ModelsInfo);
-        # - ### ### ###
-
-        try{ $allSessFilesCount = count( File::allFiles(storage_path('framework\sessions')) );
-        }catch(\Exception $e){ $allSessFilesCount = 'Вылет'.$e->getMessage(); }
-
-        # - ### ### ###
-
-        echo '
+    # Действия, убранные сюда из роутов.
+	function AT_ACT_composerDumpAutoload()
+	{
+		echo '<style> html,body { background: linear-gradient(90deg,#bc69dc,#5d2df4); }</style>';
+		
+		set_time_limit(5*60);
+		dump('Тайм лимит = 5мин');
+		
+		ignore_user_abort(false);
+		dump('Юзер аборт отменен');
+		
+		$timeBeg = time();
+		dump([
+			'Ноут' => ['Реал => ~4м | 4м20с | 4м20с | 3м6с |  |  |  |  | ','Холостой => 21c | 38 | 22 | 20 | 19 | 20 |  |  |  | '],
+		    'Комп' => ['Реал =>  |  |  |  |  |  |  |  |  |  |  | ','Холостой => |  |  |  |  |  |  |  |  |  |  |  |  | '],
+		    'Дед'  => ['Реал => 8с | 7с |  |  |  |  |  |  |  |  |  | ','Холостой => | 8с | 8с |  |  |  |  |  |  |  |  |  |  | '],
+		    'Now'  => [time(),date("Y-m-d H:i:s")],
+		]);
+		
+		# - ###
+		
+		$pathPhp = (new \Symfony\Component\Process\PhpExecutableFinder)->find(false); # ...modules\php\PHP_8.1\php.exe
+		$pathPhar = realpath('../composer.phar');  # ...\composer.phar
+		$pathWorkRoot = realpath('../'); # Корень проекта
+		
+		echo '<hr color="red">';
+		dump($pathPhp,$pathPhar,$pathWorkRoot);
+		echo '<hr color="red">';
+		
+		# - ###
+		
+		$command = array_merge([$pathPhp,$pathPhar], [ 'dump-autoload' , '--optimize' ] ); #
+		# '--working-dir='.$pathWorkRoot
+		
+		
+		dump('* Запускаю процесс *');
+		dump('Команда ===> '.implode(' ',$command));
+		dump('Рабочая папка ===> '.$pathWorkRoot);
+		dump('Окружение ===> COMPOSER_HOME='.$pathWorkRoot);
+		
+		$proc = (new \Symfony\Component\Process\Process($command,$pathWorkRoot,['COMPOSER_HOME'=>$pathWorkRoot]))->setTimeout(null);
+		$proc->enableOutput();
+		$proc->run();
+		#$proc->start();
+		
+		$proc->stop(); # В целом юзлес, но пусть будет
+		
+		echo '<hr color="red"><hr color="red"><hr color="red">';
+		dump('Процесс - Отработал');
+		
+		dump('Ком Строка: '.$proc->getCommandLine());
+		dump('Код выхода: '.$proc->getExitCodeText());
+		
+		dump($proc->getOutput());
+		
+		
+		$timeEnd = time();
+		$timeSecF = $timeEnd-$timeBeg;
+		$timeMin = floor($timeSecF/60);
+		$timeSec = $timeSecF - ($timeMin*60);
+		dump("Итого: {$timeSecF}сек = {$timeMin}м{$timeSec}с");
+		
+		dump([time(),date("Y-m-d H:i:s")]);
+		
+		
+		dd('Все');
+	}
+	function AT_ACT_sliv()
+	{
+		ignore_user_abort(false);
+		# Ничего нельзя выводить.
+		
+		$pass = @$_GET['pass'];
+		if($pass !== AT_GetArrSettings()['DB_SLIV_PASS'])
+			dd('Неверный пароль',@$_GET['pass']);
+		#dump('Пароль верен');
+		
+		$contents = '';
+		$contents .= PHP_EOL;
+		foreach( AT_DEV_getModelsInfo() as $key=> $val)
+		{
+			#dump($val);
+			$contents .= 'Модель: '.$val['NAME'].PHP_EOL;
+			$contents .= 'Таблица: '.$val['DB_TABLE'].PHP_EOL;
+			$contents .= 'Строк: '.$val['DB_COUNT'].PHP_EOL;
+			
+			$inst = new $val['NAMESPACE'];
+			$json = json_encode($inst::all()->toArray());
+			$contents .= 'Длина JSON: '.strlen($json).PHP_EOL;
+			$contents .= $json;
+			$contents .= PHP_EOL.PHP_EOL.PHP_EOL;
+		}
+		$contents .= PHP_EOL.'End';
+		#dump('Данные выгружены = '.strlen($contents));
+		
+		#$filename .= '='.$_SERVER['HTTP_HOST']; # $_SERVER['SERVER_NAME']
+		$filename = '';
+		$filename .= date("Y-m-d H.i");
+		$filename .= ' - '.DB::connection()->getDatabaseName();
+		$filename .= ' - JSON.txt';
+		# 2022-01-29 21.53 = rpc_main = JSON.txt
+		#dump('Имя файла = '.$filename);
+		
+		return response()->streamDownload(function () use ($contents) {
+			echo $contents;
+		}, $filename);
+	}
+	function AT_ACT_tblClear()
+	{
+		try{
+			$table  = @$_GET['target']; # БЕЗ префикса таблицы
+			dump($table);
+			
+			DB::table($table)->delete(); # Только удалит записи.
+			#Schema::drop($table->Tables_in_DbName);
+			
+		}catch(\Exception $e){ dd('Вылет', $e->getMessage(), $e); }
+		
+		dd('Успех', 'Таблица ' . $table . ' Просто очищена');
+	}
+	function AT_ACT_alifer()
+	{
+		$host  = $_GET['host'];
+		$port  = $_GET['port'];
+		
+		function tryConnect($host,$port)
+		{
+			$waitTimeoutInSeconds = 1;
+			
+			try
+			{
+				if($fp = @fsockopen($host,$port,$errCode,$errStr,$waitTimeoutInSeconds))
+				{
+					if($fp) // Только если смогли открыть
+						fclose($fp);
+					return true;
+				}
+				else
+				{
+					$errStr=iconv("windows-1251","utf-8",$errStr); # Иначе месиво
+					dump('Код ошибки: '.$errCode,$errStr);
+					return false;
+				}
+			}catch(Exception $e){
+				return false;
+			}
+			
+		}
+		
+		dump($host.':'.$port);
+		
+		if( tryConnect($host,$port) )
+			dd('Success');
+		else
+			dd('Fail');
+	}
+	function AT_ACT_delSessFiles()
+	{
+		try{
+			$allSessFiles = File::allFiles(storage_path('framework\sessions'));
+			dump('Всего файлов найдено: '.count($allSessFiles));
+			
+			if(count($allSessFiles) === 0) dd('Не нашли файлов');
+			
+			foreach($allSessFiles as $oneFile)
+			{
+				if( $oneFile->isFile() )
+					if($oneFile->getExtension() === '')
+					{
+						$fullPath = $oneFile->getRealPath();
+						File::delete($fullPath);
+						dump('Удален файл сессии: '.$fullPath);
+					}
+			}
+			
+		}catch(\Exception $e){ dd('Вылет', $e->getMessage(), $e); }
+		
+		dd($allSessFiles,'End');
+	}
+	function AT_ACT_telegaTest()
+	{
+		try{
+			$token = $_GET['token'];
+			$chatId = $_GET['chat'];
+			$message = $_GET['msg'];
+			
+			$url = "https://api.telegram.org/bot" . $token . "/sendMessage?chat_id=" . $chatId;
+			$url = $url . "&text=" . urlencode($message);
+			$url = $url . "&parse_mode=html"; # Что бы работало форматирование через html-теги
+			
+			$ch = curl_init();
+			
+			$optArray = array(
+				CURLOPT_URL => $url,
+				CURLOPT_RETURNTRANSFER => true,
+			);
+			curl_setopt_array($ch, $optArray);
+			
+			$result = curl_exec($ch);
+			curl_close($ch);
+			
+			dump($url);
+			dump(json_decode($result, true));
+			
+		}catch(\Exception $e){ dd('Вылет', $e->getMessage(), $e); }
+		
+		dd('End');
+	}
+	function AT_ACT_LogFile_DelLoad($filename,$action)
+	{
+		try{
+			$allLogFiles = File::allFiles(storage_path('logs'));
+			if(count($allLogFiles) === 0) dd('Не нашли файлов');
+			
+			foreach($allLogFiles as $oneFile)
+			{
+				if( $oneFile->isFile() )
+					if($oneFile->getFilename() === $filename)
+					{
+						if($action === 'DELETE')
+						{
+							dump($oneFile);
+							$path = $oneFile->getRealPath();
+							File::delete($path);
+							dump('Удален файл: '.$path );
+							break;
+						}
+						
+						if($action === 'LOAD')
+							return response()->download($oneFile,$filename);
+					}
+			}
+			
+		}catch(\Exception $e){ dd('Вылет', $e->getMessage(), $e); }
+		
+		dd('End');
+	}
+	function AT_ACT_(){}
+	
+	#
+	function AT_MAIN()
+	{
+		# - ### ### ###
+		$arrSettings = AT_GetArrSettings();
+		$AT_ModelsInfo = AT_DEV_getModelsInfo();
+		#dd($AT_ModelsInfo,$arrSettings);
+		# - ### ### ###
+		
+		try{ $allSessFilesCount = count( File::allFiles(storage_path('framework\sessions')) );
+		}catch(\Exception $e){ $allSessFilesCount = 'Вылет'.$e->getMessage(); }
+		
+		# - ### ### ###
+		
+		echo '
 			<title>Easy Artisan</title>
 			<link rel="icon" type="image/png" sizes="32x32" href="https://laravel.com/img/favicon/favicon-32x32.png">
 			<link rel="icon" type="image/png" sizes="16x16" href="https://laravel.com/img/favicon/favicon-16x16.png">
 			<link rel="shortcut icon" href="https://laravel.com/img/favicon/favicon.ico">
 
 			<style> html { '.AT_UI_getRandomBg().' }</style>
+			<style> .h { font-size: 1.2em; font-weight: bold; }</style>
 			<style>.box form { display:inline-block; }</style>
 			<style>
 			    button { font-size: 16px; padding: 12px; border-radius: 12px; border: 3px solid #4D3E96; transition: 0.3s; }
 			    button:hover{  border-color: red;  }
 			 </style>
 			';
-
-        # - ### ### ###
-
-        if( $arrSettings['AT__PASS_NEED'] === true ) # NOTE: Именно тут, чтоб вывел фон и стили.
-        {
-            if( @$_GET['pass'] !== $arrSettings['AT__PASS_TEXT'] )
-            {
-                echo '<br><br><br><form method="get" action="/artisan"><input type="text"   name="pass" placeholder="Пароль" value=""><button type="submit">Отправить</button></form>';
-                dd('Неверный пароль',$_GET,$_SERVER['REMOTE_ADDR'],$_SERVER['HTTP_USER_AGENT']);
-            }
-        }
-
-        # - ### ### ###
-
-        echo '
-			<hr><h1>~ EasyArtisan ~ v'.$arrSettings['AT_VERSION'].' ~</h1><hr>
+		
+		# - ### ### ###
+		
+		if( ($arrSettings['AT__PASS_NEED'] === true) || $arrSettings['AT__ON_DEDIC']) # NOTE: Именно тут, чтоб вывел фон и стили.
+		{
+			if( @$_GET['pass'] !== $arrSettings['AT__PASS_TEXT'] )
+			{
+				echo '<br><br><br><form method="get" action="/artisan"><input type="text"   name="pass" placeholder="Пароль" value=""><button type="submit">Отправить</button></form>';
+				dd('Неверный пароль',$_GET,$_SERVER['REMOTE_ADDR'],$_SERVER['HTTP_USER_AGENT']);
+			}
+		}
+		
+		# - ### ### ###
+		
+		AT_UI_echoHR('2',40);
+		echo '<h1>~ EasyArtisan ~ v'.$arrSettings['AT_VERSION'].' ~</h1>';
+		echo '<hr>';
+		echo '
             <h2>Общая часть</h2>
 
             <div class="box">
@@ -282,10 +475,14 @@
 				<form method="get" action="/artisan-route-list-2" target="_blank">   <button type="submit">route:list --compact</button></form>
 			</div>
             <div class="box">
-				<form method="get" action="/composer-dump" target="_blank">  <button type="submit">[ composer dump-autoload --optimize ]</button></form>
-			</div>
-            <div class="box">
-                Easy SSL:
+				<form method="get" action="/artisan-composer-dump" target="_blank">  <button type="submit">[ composer dump-autoload --optimize ]</button></form>
+			</div>';
+		
+		# - ### ### ###
+		
+		echo '<hr>';
+		echo '<div class="box">  <br>
+                <span class="h">Easy SSL:</span>
 				<form method="get" action="/easy-ssl/1/clearTbl" target="_blank">  <button type="submit">(1) Clear TBL</button></form>
 				<form method="get" action="/easy-ssl/2/makeSslKey" target="_blank">  <button type="submit">(2) Make SSL Key</button></form>
 				<form method="get" action="/easy-ssl/3/moveFiles" target="_blank">  <button type="submit">(3) Move Files</button></form>
@@ -293,61 +490,89 @@
 				<form method="get" action="/easy-ssl/5/copyVhostToRoot" target="_blank">  <button type="submit">(5) Copy Vhost To Root</button></form>
 				<form method="get" action="/easy-ssl/6/delVhostFromRoot" target="_blank">  <button type="submit">(6*) Del Vhost From Root</button></form>
 				<form method="get" action="/easy-ssl/7/delSSL" target="_blank">  <button type="submit">(7*) Del SSL</button></form>
-			</div>
-		';
-
-        # - ### ### ###
-
-        echo '<hr><h2>Работа с БД</h2>';
-
-        try { DB::connection()->getPdo(); DB::connection()->getDatabaseName();
-        } catch (\Exception $e) { dump('Нет подключения к СУБД или БД',$e, DB::connection()->getConfig()); return; }
-
-        # - ### ### ###
-
-        $dbConfig = DB::connection()->getConfig();
-        dump("Конфиг БД:  ".$dbConfig['host'].':'.$dbConfig['port'].'  ->  '.
-            $dbConfig['database'].'@'.$dbConfig['username'].'  ->  '.'Префикс: '.$dbConfig['prefix'] );
-
-        # - ### ### ###
-	
-	    dump(implode(' => ',[
-	    'SERVER' , ($_SERVER['HTTP_HOST'  ] ?? 'UNDEF'),($_SERVER['SERVER_ADDR'] ?? 'UNDEF').' : '.($_SERVER['SERVER_PORT'] ?? 'UNDEF'),
-	    ]));
-	    
-        # - ### ### ###
-
-        echo '<h3>Чистка таблиц</h3>';
-        echo '<div class="box">';
-        echo '
-                <form method="GET" action="/artisan-tbl-clear" target="_blank">
-                    <input type="text"   name="target" placeholder="Имя без префикса" value="">
-                    <button type="submit">Очистить</button>
-                </form> | <===> | ';
-        foreach($AT_ModelsInfo as $key=> $val)
-        {
-            echo '
+			</div>';
+		
+		# - ### ### ###
+		
+		echo '<hr>';
+		
+		try { DB::connection()->getPdo(); DB::connection()->getDatabaseName();
+		} catch (\Exception $e) { dump('Нет подключения к СУБД или БД',$e, DB::connection()->getConfig()); return; }
+		
+		$dbConfig = DB::connection()->getConfig();
+		dump("Конфиг БД:  ".$dbConfig['host'].':'.$dbConfig['port'].'  ->  '.
+			$dbConfig['database'].'@'.$dbConfig['username'].'  ->  '.'Префикс: '.$dbConfig['prefix'] );
+		
+		dump(implode(' => ',[
+			'SERVER' , ($_SERVER['HTTP_HOST'] ?? 'UNDEF'),($_SERVER['SERVER_ADDR'] ?? 'UNDEF').' : '.($_SERVER['SERVER_PORT'] ?? 'UNDEF'),
+			($_SERVER['SERVER_PROTOCOL'] ?? 'UNDEF'), '|||',
+			'REMOTE' , ($_SERVER['REMOTE_ADDR'] ?? 'UNDEF').' : '.($_SERVER['REMOTE_PORT'] ?? 'UNDEF'),
+		]));
+		
+		dump(implode(' => ',[
+			'ENV' , ($_SERVER['DOCUMENT_ROOT'] ?? 'UNDEF'), ( "PHP v".PHP_VERSION )		]));
+		
+		dump(implode(' => ',[
+			'SSL' , ($_SERVER['SSL_SERVER_V_START'] ?? 'UNDEF').' -> '.($_SERVER['SSL_SERVER_V_END'] ?? 'UNDEF'),($_SERVER['SSL_SERVER_I_DN_O'] ?? 'UNDEF')
+		]));
+		
+		# - ### ### ###
+		AT_UI_echoHR('1',50);
+		# - ### ### ###
+		
+		echo '<hr>';
+		echo '<div class="box"><br>   <span class="h">Чистка таблиц: </span>';
+		foreach($AT_ModelsInfo as $key=> $val)
+		{
+			echo '
                 <form method="GET" action="/artisan-tbl-clear" target="_blank">
                     <input type="hidden"   name="target"  value="'.$val['DB_TABLE'].'">
                     <button type="submit">'.$val['DB_TABLE'].' ('.$val['DB_COUNT'].')'.'</button>
                 </form> ||| ';
-        }
-        echo '</div>';
-
-        # - ### ### ###
-
-        echo '<hr><h3>Слив всей БД в JSON</h3>
-            <div class="box">
+		}
+		echo '</div>';
+		
+		# - ### ### ###
+		
+		echo '<h3>Файлы логов ошибок и вылетов - [Скачать|Удалить]</h3>';
+		$allLogFiles = File::allFiles($arrSettings['AT__PATH_LOGS']);
+		#dd($allLogFiles);
+		echo '<div class="box">';
+		foreach($allLogFiles as $oneFile)
+		{
+			if( $oneFile->isFile() )
+			{
+				if( $oneFile->getRelativePath() !== '' ) continue; # Скип логов в подпапках.
+				$size = floor($oneFile->getSize() / 1024);
+				$name = $oneFile->getFilename();
+				$nameFull = "{$name} (~{$size}Кб)";
+				echo '<form method="GET" action="/artisan-download-one-log-file/'.$name.'" target="_blank">
+                            <button type="submit">'.$nameFull.'</button>
+                        </form>
+                         <form method="GET" action="/artisan-delete-one-log-file/'.$name.'" target="_blank">
+                            <button type="submit">DEL</button>
+                        </form>
+                         <=> ';
+			}
+		}
+		echo '</div>';
+		
+		# - ### ### ###
+		
+		echo '<hr>';
+		echo '
+            <div class="box"><br>
+			<span class="h">Слив всей БД в JSON: </span>
                 <form method="GET" action="/artisan-sliv" target="_blank">
                     <input type="text"   name="pass" placeholder="Пароль"  value="">
                     <button type="submit">Скачать</button>
                 </form>
              </div>';
-
-        # - ### ### ###
-
-        echo '<hr><h3>Быстрый скан доступности сервера</h3>
-            <h4>3389-RDP | 80-HTTP | 443-HTTPS | 21-FTP | 3306-MySQL</h4>
+		
+		# - ### ### ###
+		
+		echo '<hr>';
+		echo '<h3>Быстрый скан доступности сервера = 3389-RDP | 80-HTTP | 443-HTTPS | 21-FTP | 3306-MySQL</h3>
             <div class="box">
                 <form method="GET" action="/artisan-alifer" target="_blank">
                     <input type="text"   name="host" placeholder="ip или домен"  value="">
@@ -355,49 +580,14 @@
                     <button type="submit">Проверить</button>
                 </form>
              </div>';
+		
+		# - ### ### ###
+		
+		echo '<hr>';
+		echo '
+			<div class="box"><br>
+			<span class="h">Быстрый Telegram: </span>
 
-        echo '<hr>';
-
-        # - ### ### ###
-
-        echo '<h3>Файлы логов ошибок и вылетов</h3>';
-        $allLogFiles = File::allFiles(storage_path('logs'));
-        #dd($allLogFiles);
-        echo '<div class="box"> Скачать: ==> ';
-        foreach($allLogFiles as $oneFile)
-        {
-            if( $oneFile->isFile() )
-            {
-                if( $oneFile->getRelativePath() !== '' ) continue; # Скип логов в подпапках.
-                $size = floor($oneFile->getSize() / 1024);
-                $name = $oneFile->getFilename();
-                $nameFull = "{$name} (~{$size}Кб)";
-                echo '<form method="GET" action="/artisan-download-one-log-file/'.$name.'" target="_blank">
-                            <button type="submit">'.$nameFull.'</button>
-                        </form> <=> ';
-            }
-        }
-        echo '</div>';
-        echo '<div class="box"> Удалить: ==> ';
-        foreach($allLogFiles as $oneFile)
-        {
-            if( $oneFile->isFile() )
-            {
-                if( $oneFile->getRelativePath() !== '' ) continue; # Скип логов в подпапках.
-                $size = floor($oneFile->getSize() / 1024);
-                $name = $oneFile->getFilename();
-                $nameFull = "{$name} (~{$size}Кб)";
-                echo '<form method="GET" action="/artisan-delete-one-log-file/'.$name.'" target="_blank">
-                            <button type="submit">'.$nameFull.'</button>
-                        </form> <=> ';
-            }
-        }
-        echo '</div>';
-
-        # - ### ### ###
-
-        echo '<hr><h3>Быстрый Telegram</h3>
-            <div class="box">
                 <form method="GET" action="/artisan-telegram" target="_blank">
                     <input type="text"   name="token" placeholder="Токен"  value="">
                     <input type="text"   name="chat" placeholder="Чат"  value="">
@@ -405,218 +595,67 @@
                     <button type="submit">Отправить</button>
                 </form>
              </div>';
-
-        # - ### ### ###
-
-        echo '<hr><h3>Быстрые ссылки</h3>';
-        # TODO: Добавить в массив подключи для каждоый ссылки - выводимое название + цвет.   если массив, то чекаю иначе туп овывод.
-
-        foreach( AT_UI_getArrMyUrls() as $key=>$val )
-        {
-            echo '<div class="box">'.$key.': ==> ';
-            foreach($val as $url)
-            {
-                if( is_array($url) )
-                {
-                    $text = $url[1];
-                    $url = $url[0]; # Именно такой порядок
-                }
-                else
-                    $text = $url;
-
-                echo '<form method="get" action="'.$url.'" target="_blank"><button type="submit">'.str_replace('https://','',$text).'</button></form>';
-            }
-            echo '</div>';
-        }
-        echo "Сделать плитку как тут = https://webbrowsertools.com/";
-
-
-
-    }  );
-
-    Route::get('/artisan-migrate',        function () { Artisan::call('migrate');          AT_echoFinalInfoAndDD('migrate');  } );
-    Route::get('/artisan-migrate-fresh',  function () { Artisan::call('migrate:fresh', ['--seed' => true]);  AT_echoFinalInfoAndDD('migrate:fresh --seed');    } );
-    Route::get('/artisan-migrate-status', function () { Artisan::call('migrate:status');   AT_echoFinalInfoAndDD('migrate:status');  } );
-    Route::get('/artisan-optimize-clear', function () { Artisan::call('optimize:clear');   AT_echoFinalInfoAndDD('optimize:clear');  } );
-    Route::get('/artisan-keygen',         function () { Artisan::call('key:generate');     AT_echoFinalInfoAndDD('key:generate');    } );
-    Route::get('/artisan-route-list',     function () { Artisan::call('route:list');       AT_echoFinalInfoAndDD('route:list');      } );
-    Route::get('/artisan-route-list-2',   function () { Artisan::call('route:list', ['--compact' => true]);   AT_echoFinalInfoAndDD('route:list --compact');   } );
-    Route::get('/artisan-composer-dump',     function () { AT_composerDumpAutoload(); } );
-
-    Route::get('/artisan-sliv',function()
+		
+		# - ### ### ###
+		
+		echo '<hr>';
+		echo '<h3>Быстрые ссылки</h3>';
+		# TODO: Добавить в массив подключи для каждоый ссылки - выводимое название + цвет.   если массив, то чекаю иначе туп овывод.
+		
+		foreach( AT_UI_getArrMyUrls() as $key=>$val )
+		{
+			echo '<div class="box">'.$key.': ==> ';
+			foreach($val as $url)
+			{
+				if( is_array($url) )
+				{
+					$text = $url[1];
+					$url = $url[0]; # Именно такой порядок
+				}
+				else
+					$text = $url;
+				
+				echo '<form method="get" action="'.$url.'" target="_blank"><button type="submit">'.str_replace('https://','',$text).'</button></form>';
+			}
+			echo '</div>';
+		}
+		echo "Сделать плитку как тут = https://webbrowsertools.com/";
+	}
+	
+	
+    # Единое место для всех настроек, паролей и тд.
+    function AT_GetArrSettings()
     {
-        $pass = @$_GET['pass'];
-        if($pass !== AT_GetArrSettings()['DB_SLIV_PASS'])
-            dd('Неверный пароль',@$_GET['pass']);
+    	return [
+    		'AT_VERSION' => '2023-09-20',
+    		
+		    'AT__ON_DEDIC' => (($_SERVER['SERVER_ADDR'] ?? 'UNDEF') !== '127.0.0.1' ),
+		    'AT__PASS_NEED' => true,
+		    'AT__PASS_TEXT' => '1243',
+		    
+		    'AT__PATH_LOGS' => base_path('storage-logs'), # storage_path('logs'),
+    		#'' => '',
+    		'DB_SLIV_PASS' => '123',
+	    ];
+    }
 
-        $contents = '';
-        $contents .= PHP_EOL;
+    Route::get('/artisan',                function () {  AT_MAIN();  } );
+    Route::get('/artisan-migrate',        function () { Artisan::call('migrate');          AT_DEV_echoFinalInfoAndDD('migrate');  } );
+    Route::get('/artisan-migrate-fresh',  function () { Artisan::call('migrate:fresh', ['--seed' => true]);  AT_DEV_echoFinalInfoAndDD('migrate:fresh --seed');    } );
+    Route::get('/artisan-migrate-status', function () { Artisan::call('migrate:status');   AT_DEV_echoFinalInfoAndDD('migrate:status');  } );
+    Route::get('/artisan-optimize-clear', function () { Artisan::call('optimize:clear');   AT_DEV_echoFinalInfoAndDD('optimize:clear');  } );
+    Route::get('/artisan-keygen',         function () { Artisan::call('key:generate');     AT_DEV_echoFinalInfoAndDD('key:generate');    } );
+    Route::get('/artisan-route-list',     function () { Artisan::call('route:list');       AT_DEV_echoFinalInfoAndDD('route:list');      } );
+    Route::get('/artisan-route-list-2',   function () { Artisan::call('route:list', ['--compact' => true]);   AT_DEV_echoFinalInfoAndDD('route:list --compact');   } );
+    Route::get('/artisan-composer-dump',  function () { AT_ACT_composerDumpAutoload(); } );
 
-        foreach(AT_getModelsInfo() as $key=> $val)
-        {
-            $contents .= 'Модель: '.$val['NAME'].PHP_EOL;
-            $contents .= 'Таблица: '.$val['DB_TABLE'].PHP_EOL;
-            $contents .= 'Строк: '.$val['DB_COUNT'].PHP_EOL;
+    Route::get('/artisan-sliv',           function () { return AT_ACT_sliv(); } );
+    Route::get('/artisan-alifer',         function () { AT_ACT_alifer(); });
+    Route::get('/artisan-telegram',       function () { AT_ACT_telegaTest(); });
+    Route::get('/artisan-tbl-clear',      function () { AT_ACT_tblClear(); });
+    Route::get('/artisan-del-sess-files', function () { AT_ACT_delSessFiles(); });
 
-            $inst = new $val['NAMESPACE'];
-            $json = json_encode($inst::all()->toArray());
-            $contents .= 'Длина JSON: '.strlen($json).PHP_EOL;
-            $contents .= $json;
-            $contents .= PHP_EOL.PHP_EOL.PHP_EOL;
-        }
-        $contents .= PHP_EOL.'End';
-
-        #$filename .= '='.$_SERVER['HTTP_HOST']; # $_SERVER['SERVER_NAME']
-        $filename = '';
-        $filename .= date("Y-m-d H.i");
-        $filename .= ' = '.DB::connection()->getDatabaseName();
-        $filename .= ' = JSON.txt';
-        # 2022-01-29 21.53 = rpc_main = JSON.txt
-
-        return response()->streamDownload(function () use ($contents) {
-            echo $contents;
-        }, $filename);
-    } );
-    Route::get('/artisan-tbl-clear',function()
-    {
-        try{
-            $table  = @$_GET['target']; # БЕЗ префикса таблицы
-            dump($table);
-
-            DB::table($table)->delete(); # Только удалит записи.
-            #Schema::drop($table->Tables_in_DbName);
-
-        }catch(\Exception $e){ dd('Вылет', $e->getMessage(), $e); }
-
-        dd('Успех', 'Таблица ' . $table . ' Просто очищена');
-    });
-    Route::get('/artisan-alifer',function()
-    {
-        $host  = $_GET['host'];
-        $port  = $_GET['port'];
-
-        function tryConnect($host,$port)
-        {
-            $waitTimeoutInSeconds = 1;
-
-            try
-            {
-                if($fp = @fsockopen($host,$port,$errCode,$errStr,$waitTimeoutInSeconds))
-                {
-                    if($fp) // Только если смогли открыть
-                        fclose($fp);
-                    return true;
-                }
-                else
-                {
-                    $errStr=iconv("windows-1251","utf-8",$errStr); # Иначе месиво
-                    dump('Код ошибки: '.$errCode,$errStr);
-                    return false;
-                }
-            }catch(Exception $e){
-                return false;
-            }
-
-        }
-
-        dump($host.':'.$port);
-
-        if( tryConnect($host,$port) )
-            dd('Success');
-        else
-            dd('Fail');
-    });
-    Route::get('/artisan-del-sess-files',function()
-    {
-        try{
-            $allSessFiles = File::allFiles(storage_path('framework\sessions'));
-            dump('Всего файлов найдено: '.count($allSessFiles));
-
-            if(count($allSessFiles) === 0) dd('Не нашли файлов');
-
-            foreach($allSessFiles as $oneFile)
-            {
-                if( $oneFile->isFile() )
-                    if($oneFile->getExtension() === '')
-                    {
-                        $fullPath = $oneFile->getRealPath();
-                        File::delete($fullPath);
-                        dump('Удален файл сессии: '.$fullPath);
-                    }
-            }
-
-        }catch(\Exception $e){ dd('Вылет', $e->getMessage(), $e); }
-
-        dd($allSessFiles,'End');
-    });
-    Route::get('/artisan-telegram',function()
-    {
-        try{
-            $token = $_GET['token'];
-            $chatId = $_GET['chat'];
-            $message = $_GET['msg'];
-
-            $url = "https://api.telegram.org/bot" . $token . "/sendMessage?chat_id=" . $chatId;
-            $url = $url . "&text=" . urlencode($message);
-            $url = $url . "&parse_mode=html"; # Что бы работало форматирование через html-теги
-
-            $ch = curl_init();
-
-            $optArray = array(
-                CURLOPT_URL => $url,
-                CURLOPT_RETURNTRANSFER => true,
-            );
-            curl_setopt_array($ch, $optArray);
-
-            $result = curl_exec($ch);
-            curl_close($ch);
-
-            dump($url);
-            dump(json_decode($result, true));
-
-        }catch(\Exception $e){ dd('Вылет', $e->getMessage(), $e); }
-
-        dd('End');
-    });
-
-    Route::get('/artisan-download-one-log-file/{filename}',function($filename)
-    {
-        try{
-            $allLogFiles = File::allFiles(storage_path('logs'));
-            if(count($allLogFiles) === 0) dd('Не нашли файлов');
-
-            foreach($allLogFiles as $oneFile)
-            {
-                if( $oneFile->isFile() )
-                    if($oneFile->getFilename() === $filename)
-                        return response()->download($oneFile,$filename);
-            }
-
-        }catch(\Exception $e){ dd('Вылет', $e->getMessage(), $e); }
-
-        dd($allLogFiles,'End');
-    });
-    Route::get('/artisan-delete-one-log-file/{filename}',function($filename)
-    {
-        try{
-            $allLogFiles = File::allFiles(storage_path('logs'));
-            if(count($allLogFiles) === 0) dd('Не нашли файлов');
-
-            foreach($allLogFiles as $oneFile)
-            {
-                if( $oneFile->isFile() )
-                    if($oneFile->getFilename() === $filename)
-                    {
-                        $path = $oneFile->getRealPath();
-                        File::delete($path);
-                        dump('Удален файл: '.$path );
-                        break;
-                    }
-            }
-
-        }catch(\Exception $e){ dd('Вылет', $e->getMessage(), $e); }
-
-        dd($allLogFiles,'End');
-    });
+    Route::get('/artisan-download-one-log-file/{filename}',function($filename){ return AT_ACT_LogFile_DelLoad($filename,'LOAD'  ); });
+    Route::get('/artisan-delete-one-log-file/{filename}'  ,function($filename){ return AT_ACT_LogFile_DelLoad($filename,'DELETE'); });
 
     # - ###
