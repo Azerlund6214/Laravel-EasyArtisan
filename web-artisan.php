@@ -384,11 +384,15 @@
 	function AT_ACT_LogFile_DelLoad($filename,$action)
 	{
 		try{
-			$allLogFiles = File::allFiles(storage_path('logs'));
+			$logFolder = AT_GetArrSettings()['AT__PATH_LOGS'];
+			$allLogFiles = File::allFiles($logFolder); # TODO: Он берет все включая в подпапках.
+			
 			if(count($allLogFiles) === 0) dd('Не нашли файлов');
 			
 			foreach($allLogFiles as $oneFile)
 			{
+				#dump($oneFile->getFilename(), $filename);
+
 				if( $oneFile->isFile() )
 					if($oneFile->getFilename() === $filename)
 					{
@@ -398,9 +402,8 @@
 							$path = $oneFile->getRealPath();
 							File::delete($path);
 							dump('Удален файл: '.$path );
-							break;
+							return;
 						}
-						
 						if($action === 'LOAD')
 							return response()->download($oneFile,$filename);
 					}
@@ -408,7 +411,7 @@
 			
 		}catch(\Exception $e){ dd('Вылет', $e->getMessage(), $e); }
 		
-		dd('End');
+		dd('End - Что-то не так. Действие не выполнилось.',$logFolder);
 	}
 	function AT_ACT_(){}
 	
@@ -627,7 +630,7 @@
     function AT_GetArrSettings()
     {
     	return [
-    		'AT_VERSION' => '2023-09-20',
+    		'AT_VERSION' => '2023-09-21',
     		
 		    'AT__ON_DEDIC' => (($_SERVER['SERVER_ADDR'] ?? 'UNDEF') !== '127.0.0.1' ),
 		    'AT__PASS_NEED' => true,
